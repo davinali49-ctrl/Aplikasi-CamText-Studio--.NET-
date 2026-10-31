@@ -38,6 +38,10 @@ Public Class Form1
     ' Frame dari kamera ditampilkan di PictureBox
     Private Sub NewFrame_Event(sender As Object, eventArgs As NewFrameEventArgs)
         Dim bmp As Bitmap = CType(eventArgs.Frame.Clone(), Bitmap)
+
+        ' Membalik gambar secara horizontal agar tidak terbalik/kemirror
+        bmp.RotateFlip(RotateFlipType.RotateNoneFlipX)
+
         PictureBox1.Image = bmp
     End Sub
 
@@ -61,7 +65,7 @@ Public Class Form1
         If capturedImage IsNot Nothing AndAlso Not String.IsNullOrEmpty(TextBox1.Text) Then
             Using g As Graphics = Graphics.FromImage(capturedImage)
                 ' Atur font lebih besar (ukuran 48) & bersih (Smooth text)
-                Dim fontText As New Font("Segoe UI", 48, FontStyle.Bold)
+                Dim fontText As New Font("Segoe UI", 75, FontStyle.Bold)
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias
 
                 Dim textToDraw As String = TextBox1.Text
