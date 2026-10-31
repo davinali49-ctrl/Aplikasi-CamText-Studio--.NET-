@@ -1,0 +1,29 @@
+## Visual Studio / .NET
+.vs/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.log
+
+## NuGet
+packages/
+*.nupkg
+*.nuget.props
+*.nuget.targets
+
+## Build output / temp
+*.pdb
+*.cache
+*.tmp
+
+## OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
