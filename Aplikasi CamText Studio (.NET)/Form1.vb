@@ -1,6 +1,7 @@
 ﻿Imports AForge.Video
 Imports AForge.Video.DirectShow
 Imports System.Drawing
+Imports System.Windows.Forms
 
 Public Class Form1
     Dim videoDevices As FilterInfoCollection
@@ -17,18 +18,30 @@ Public Class Form1
             Next
             If ComboBox1.Items.Count > 0 Then ComboBox1.SelectedIndex = 0
         Catch ex As Exception
-            MessageBox.Show("Gagal mendeteksi webcam: " & ex.Message)
+            MessageBox.Show("Gagal mendeteksi webcam: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
 
-        ' Hubungkan Event Click ke Tombol dengan nama yang baru
+        ' Hubungkan Event Click ke Tombol
         AddHandler btnStart.Click, AddressOf btnStart_Click
         AddHandler btnCapture.Click, AddressOf btnCapture_Click
         AddHandler btnAddText.Click, AddressOf btnAddText_Click
+
+        ' Pastikan btnSave terdaftar dan paksa tampil di paling depan (Biar tidak tertutup Panel)
+        If Controls.ContainsKey("btnSave") Then
+            Dim btn As Control = Controls("btnSave")
+            btn.BringToFront()
+            AddHandler btn.Click, AddressOf btnSave_Click
+        End If
     End Sub
 
     ' 1. Mulai Kamera (btnStart)
     Private Sub btnStart_Click(sender As Object, e As EventArgs)
         If videoDevices IsNot Nothing AndAlso videoDevices.Count > 0 Then
+            ' Hentikan video lama jika sedang berjalan
+            If finalVideo IsNot Nothing AndAlso finalVideo.IsRunning Then
+                finalVideo.SignalToStop()
+            End If
+
             finalVideo = New VideoCaptureDevice(videoDevices(ComboBox1.SelectedIndex).MonikerString)
             AddHandler finalVideo.NewFrame, AddressOf NewFrame_Event
             finalVideo.Start()
@@ -64,7 +77,7 @@ Public Class Form1
     Private Sub btnAddText_Click(sender As Object, e As EventArgs)
         If capturedImage IsNot Nothing AndAlso Not String.IsNullOrEmpty(TextBox1.Text) Then
             Using g As Graphics = Graphics.FromImage(capturedImage)
-                ' Atur font lebih besar (ukuran 48) & bersih (Smooth text)
+                ' Font ukuran 75 & bersih (Smooth text)
                 Dim fontText As New Font("Segoe UI", 75, FontStyle.Bold)
                 g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias
 
@@ -72,20 +85,45 @@ Public Class Form1
                 Dim xPos As Single = 30
                 Dim yPos As Single = currentYPos
 
-                ' 1. Gambar Efek Bayangan/Outline Hitam (biar teks terbaca tegas & estetik)
+                ' 1. Gambar Efek Bayangan/Outline Hitam
                 Dim shadowBrush As New SolidBrush(Color.Black)
-                g.DrawString(textToDraw, fontText, shadowBrush, New PointF(xPos + 3, yPos + 3))
+                g.DrawString(textToDraw, fontText, shadowBrush, New PointF(xPos + 4, yPos + 4))
 
-                ' 2. Gambar Teks Utama Warna Putih (terlihat rapi & tidak horor)
+                ' 2. Gambar Teks Utama Warna Putih
                 Dim textBrush As New SolidBrush(Color.White)
                 g.DrawString(textToDraw, fontText, textBrush, New PointF(xPos, yPos))
 
-                ' Jarak baris untuk teks berikutnya (disesuaikan dengan ukuran font baru)
-                currentYPos += 90
+                ' Jarak baris untuk teks berikutnya
+                currentYPos += 110
             End Using
 
             PictureBox1.Image = capturedImage
             TextBox1.Clear()
+        End If
+    End Sub
+
+    ' 4. FITUR BARU: Simpan Foto ke PC (btnSave)
+    Private Sub btnSave_Click(sender As Object, e As EventArgs)
+        If PictureBox1.Image IsNot Nothing AndAlso capturedImage IsNot Nothing Then
+            Dim sfd As New SaveFileDialog()
+            sfd.Filter = "JPEG Image (*.jpg)|*.jpg|PNG Image (*.png)|*.png"
+            sfd.Title = "Simpan Hasil Foto"
+            sfd.FileName = "Webcam_Photo_" & DateTime.Now.ToString("yyyyMMdd_HHmmss")
+
+            If sfd.ShowDialog() = DialogResult.OK Then
+                Try
+                    If sfd.FilterIndex = 1 Then
+                        capturedImage.Save(sfd.FileName, System.Drawing.Imaging.ImageFormat.Jpeg)
+                    Else
+                        capturedImage.Save(sfd.FileName, System.Drawing.Imaging.ImageFormat.Png)
+                    End If
+                    MessageBox.Show("Foto berhasil disimpan!", "Sukses", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Catch ex As Exception
+                    MessageBox.Show("Gagal menyimpan foto: " & ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                End Try
+            End If
+        Else
+            MessageBox.Show("Belum ada foto yang diambil/diolah!", "Peringatan", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End If
     End Sub
 
